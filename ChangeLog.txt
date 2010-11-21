@@ -1,0 +1,57 @@
+2010.11.21 - 1.2.5
+- TOC update
+- updated XML and Lua calls with new format of 4.0
+
+2009.12.09 - 1.2.4.5
+- TOC update to 3.3
+- removed calls of MinimapToggleButton() since they seems obsolete
+
+2009.08.06 - 1.2.4.4
+- TOC update
+
+2009.04.15 - 1.2.4.3
+- TOC update
+
+2008.11.21 - 1.2.4.2
+- TOC update
+- corrected help
+
+2008.01.15 - 1.2.4.1
+- TOC update
+- modified tracking frame call for patch 2.3
+
+2007.06.03 - 1.2.4
+ - TOC update
+
+2007.02.17 - 1.2.3
+ - Added '/rmm mapico' world map icon toggle
+ - Changed variable load sequence from VARIABLES_LOADED to PLAYER_LOGIN
+
+2007.01.26 - 1.2.2
+ - TOC update
+
+2006.10.27 - 1.2.1
+ - Fixed a bug in the map not restoring location if moved
+ - Fixed an error message about the map not being movable
+ - Modifed tracking icon to not ride above certain frames
+
+2006.10.05 - 1.2
+ - Actually added '/rmm loc' command / show/hide/toggle location bar this time
+ - Added square minimap style
+ - The minimap can now be moved, and reset
+ - Added '/rmm reset' master reset (all options)
+ - Added '/rmm move on' movement unlock requirement
+ - Added '/rmm move reset' map location only reset
+ - Fixed tracking overlay
+ - Updated to work with WoW 1.12 and later
+
+2006.07.12 - 1.1
+ - Cleaned up code, condensed redundancy 
+ - Added support for changing alpha transparency via ctrl+mouse wheel
+ - Added '/rmm alpha' command / set transparency
+ - Added '/rmm style' command / set style
+ - Added '/rmm loc' command / show/hide/toggle location bar
+ - Removed '/reminimap' and '/minimap' command aliases
+
+2006.06.28 - 1.0
+ - Initial release
