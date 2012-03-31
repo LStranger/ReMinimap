@@ -3,7 +3,7 @@
   Translator: phresno
   Language:   English (US)
   Created:	  2006.06.27
-  Updated:	  2008.11.21
+  Updated:	  2012.03.31
 ------------------------------------------------------------------------------]]
 
 -- Usage help
@@ -27,3 +27,14 @@ RMM_HELP = {
 };
 
 RMM_HELP_INVSTYLE = "is not a valid minimap style.";
+
+-- Options texts
+RMM_OPTIONS = "ReMinimap Options";
+RMM_OPT_STYLE = "Minimap style";
+RMM_OPT_ZOOM = "Show zoom buttons";
+RMM_OPT_WHEEL = "Use mouse wheel to zoom";
+RMM_OPT_TIME = "Show time of day icon";
+RMM_OPT_ZONE = "Show location bar";
+RMM_OPT_WMAP = "Show worldmap icon";
+RMM_OPT_PIN = "Pin minimap position";
+RMM_OPT_ALPHA = "Alpha (opaque) of the minimap";

@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Author:	phresno
-  Version:	1.2.5
+  Version:	1.3.0
   Revision:	0
   Created:	2006.06.27
-  Updated:	2010.11.21
+  Updated:	2012.03.31
 
   See ChangeLog.txt for changes.
 
@@ -41,7 +41,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.2.5";
+RMM_VERSION     = "1.3.0";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
@@ -79,6 +79,160 @@ rmm_default_cfg = {
 };
 
 rmm_cfg = {};
+
+
+--------------------------------------------------------------------------------
+-- Options Frame
+--------------------------------------------------------------------------------
+function RMMA_OptionsFrameStyleInitialize()
+    if (rmm_cfg[RMM_STYLE] == nil) then return; end
+    local info = UIDropDownMenu_CreateInfo();
+    info.func = RMMA_OptionsFrameStyle_OnClick;
+    info.owner = RMMA_OptionsFrameStyle;
+    table.foreach(RMM_STYLES, function(i, v)
+	info.text = i;
+	info.value = i;
+	--if (rmm_cfg[RMM_STYLE] == i) then
+	--    info.checked = 1;
+	--else
+	--    info.checked = nil;
+	--end
+	UIDropDownMenu_AddButton(info, 1);
+    end );
+    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
+    UIDropDownMenu_SetSelectedValue(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
+end
+
+function RMMA_OptionsFrameStyle_OnClick(self, button, down)
+    rmm_cfg[RMM_STYLE] = self.value;
+    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
+    Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
+end
+
+do
+    RMMA_OptionsFrame = CreateFrame("FRAME", "RMMA_OptionsFrame", UIParent );
+    RMMA_OptionsFrame.name = "ReMinimap";
+    RMMA_OptionsFrame.default = function () RMMA_SetGeneralDefaults(); end;
+    InterfaceOptions_AddCategory(RMMA_OptionsFrame);
+
+    -- Options title
+    RMMA_OptionsFrameTitle = RMMA_OptionsFrame:CreateFontString("RMMA_OptionsFrameTitle", "ARTWORK", "GameFontNormalLarge");
+    RMMA_OptionsFrameTitle:SetPoint("TOPLEFT", 16, -16);
+    RMMA_OptionsFrameTitle:SetJustifyH("LEFT");
+    RMMA_OptionsFrameTitle:SetJustifyV("TOP");
+    RMMA_OptionsFrameTitle:SetText(RMM_OPTIONS);
+
+    -- Select frame style
+    RMMA_OptionsFrameStyleTitle = RMMA_OptionsFrame:CreateFontString("RMMA_OptionsFrameStyleTitle", "ARTWORK", "GameFontHighlight");
+    RMMA_OptionsFrameStyleTitle:SetPoint("TOPLEFT", RMMA_OptionsFrameTitle, "BOTTOMLEFT", 0, -16);
+    RMMA_OptionsFrameStyleTitle:SetText(RMM_OPT_STYLE..":");
+
+    RMMA_OptionsFrameStyle = CreateFrame("Frame", "RMMA_OptionsFrameStyle", RMMA_OptionsFrame, "UIDropDownMenuTemplate");
+    RMMA_OptionsFrameStyle:SetPoint("BOTTOMLEFT", RMMA_OptionsFrameStyleTitle, "BOTTOMRIGHT", 0, -12);
+    --RMMA_OptionsFrameStyle:SetWidth(200);
+    --UIDropDownMenu_SetWidth(RMMA_OptionsFrameStyle, 200);
+    --UIDropDownMenu_Initialize(RMMA_OptionsFrameStyle, RMMA_OptionsFrameStyleInitialize);
+
+    -- Toggle zoom buttons
+    RMMA_OptionsFrameZoom = CreateFrame("CheckButton", "RMMA_OptionsFrameZoom", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameZoom:SetPoint("TOPLEFT", RMMA_OptionsFrameStyleTitle, "BOTTOMLEFT", 0, -10);
+    RMMA_OptionsFrameZoomText:SetText(RMM_OPT_ZOOM);
+    RMMA_OptionsFrameZoom:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameZoom:GetChecked()) then
+		rmm_cfg[RMM_SHOWZOOM] = true;
+	    else
+		rmm_cfg[RMM_SHOWZOOM] = false;
+	    end
+	    Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
+	end);
+
+    -- Toggle zoom control
+    RMMA_OptionsFrameWheel = CreateFrame("CheckButton", "RMMA_OptionsFrameWheel", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameWheel:SetPoint("TOPLEFT", RMMA_OptionsFrameZoom, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameWheelText:SetText(RMM_OPT_WHEEL);
+    RMMA_OptionsFrameWheel:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameWheel:GetChecked()) then
+		rmm_cfg[RMM_ZOOMWHEEL] = true;
+	    else
+		rmm_cfg[RMM_ZOOMWHEEL] = false;
+	    end
+	    -- wheel switch will be handled in handler
+	end);
+
+    -- Toggle day/night indicator
+    RMMA_OptionsFrameTime = CreateFrame("CheckButton", "RMMA_OptionsFrameTime", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameTime:SetPoint("TOPLEFT", RMMA_OptionsFrameWheel, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameTimeText:SetText(RMM_OPT_TIME);
+    RMMA_OptionsFrameTime:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameTime:GetChecked()) then
+		rmm_cfg[RMM_SHOWTIME] = true;
+	    else
+		rmm_cfg[RMM_SHOWTIME] = false;
+	    end
+	    Rmm_SetTimeOfDay(rmm_cfg[RMM_SHOWTIME]);
+	end);
+
+    -- Toggle location bar
+    RMMA_OptionsFrameZone = CreateFrame("CheckButton", "RMMA_OptionsFrameZone", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameZone:SetPoint("TOPLEFT", RMMA_OptionsFrameTime, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameZoneText:SetText(RMM_OPT_ZONE);
+    RMMA_OptionsFrameZone:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameZone:GetChecked()) then
+		rmm_cfg[RMM_SHOWZONE] = true;
+	    else
+		rmm_cfg[RMM_SHOWZONE] = false;
+	    end
+	    Rmm_SetZone(rmm_cfg[RMM_SHOWZONE]);
+	end);
+
+    -- Toggle world map button
+    RMMA_OptionsFrameWMap = CreateFrame("CheckButton", "RMMA_OptionsFrameWMap", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameWMap:SetPoint("TOPLEFT", RMMA_OptionsFrameZone, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameWMapText:SetText(RMM_OPT_WMAP);
+    RMMA_OptionsFrameWMap:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameWMap:GetChecked()) then
+		rmm_cfg[RMM_SHOWWMAP] = true;
+	    else
+		rmm_cfg[RMM_SHOWWMAP] = false;
+	    end
+	    Rmm_SetWMap(rmm_cfg[RMM_SHOWWMAP]);
+	end);
+
+    -- Toggle movability
+    RMMA_OptionsFramePin = CreateFrame("CheckButton", "RMMA_OptionsFramePin", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFramePin:SetPoint("TOPLEFT", RMMA_OptionsFrameWMap, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFramePinText:SetText(RMM_OPT_PIN);
+    RMMA_OptionsFramePin:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFramePin:GetChecked()) then
+		rmm_cfg[RMM_MOVABLE] = false;
+	    else
+		rmm_cfg[RMM_MOVABLE] = true;
+	    end
+	    Rmm_FramesMovable(rmm_cfg[RMM_MOVABLE]);
+	end);
+
+    -- Change transparency
+    RMMA_OptionsFrameAlpha = CreateFrame("Slider", "RMMA_OptionsFrameAlpha", RMMA_OptionsFrame, "OptionsSliderTemplate");
+    RMMA_OptionsFrameAlpha:SetWidth(300);
+    RMMA_OptionsFrameAlpha:SetHeight(16);
+    RMMA_OptionsFrameAlpha:SetPoint("TOPLEFT", RMMA_OptionsFramePin, "BOTTOMLEFT", 0, -20);
+    RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA);
+    RMMA_OptionsFrameAlphaHigh:SetText("100%");
+    RMMA_OptionsFrameAlphaLow:SetText("0%");
+    RMMA_OptionsFrameAlpha:SetMinMaxValues(0,1);
+    RMMA_OptionsFrameAlpha:SetValueStep(0.01);
+    RMMA_OptionsFrameAlpha:SetScript("OnValueChanged",
+	function()
+	     rmm_cfg[RMM_ALPHA] = RMMA_OptionsFrameAlpha:GetValue();
+	     Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
+	end );
+end
 
 --------------------------------------------------------------------------------
 -- Main Program Control & Config Functions
@@ -273,6 +427,7 @@ function Rmm_Init()
   then
       Rmm_Cfg_Init();
    end
+   UIDropDownMenu_Initialize(RMMA_OptionsFrameStyle, RMMA_OptionsFrameStyleInitialize);
 end
 
 function Rmm_Update()
@@ -292,6 +447,15 @@ function Rmm_Update()
       Rmm_SetWMap(rmm_cfg[RMM_SHOWWMAP]);
       Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
       MiniMapTracking:SetFrameStrata("LOW"); -- fix tracking icon
+
+      -- set options now
+      RMMA_OptionsFrameZoom:SetChecked(rmm_cfg[RMM_SHOWZOOM]);
+      RMMA_OptionsFrameWheel:SetChecked(rmm_cfg[RMM_ZOOMWHEEL]);
+      RMMA_OptionsFrameTime:SetChecked(rmm_cfg[RMM_SHOWTIME]);
+      RMMA_OptionsFrameZone:SetChecked(rmm_cfg[RMM_SHOWZONE]);
+      RMMA_OptionsFrameWMap:SetChecked(rmm_cfg[RMM_SHOWWMAP]);
+      RMMA_OptionsFramePin:SetChecked(not rmm_cfg[RMM_MOVABLE]);
+      RMMA_OptionsFrameAlpha:SetValue(rmm_cfg[RMM_ALPHA]);
    end
 
    -- zoom wheel is handled in the event function itself

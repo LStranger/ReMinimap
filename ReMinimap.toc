@@ -1,6 +1,6 @@
-## Interface: 40000
-## Title: R|cffcc0000e|rMinimap v1.2.5
-## Author: phresno
+## Interface: 40300
+## Title: R|cffcc0000e|rMinimap v1.3.0
+## Authors: phresno, lstranger
 ## Notes: Allows customization of the minimap
 ## SavedVariables: rmm_cfg
 ReMinimap.xml
