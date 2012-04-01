@@ -2,6 +2,7 @@
 
    <!-- Localizations -->
    <Script file="localization.en.lua"/>
+   <Script file="localization.ru.lua"/>
 
    <!-- Scripts -->
    <Script file="ReMinimap.lua"/>

@@ -28,6 +28,10 @@ RMM_HELP = {
 
 RMM_HELP_INVSTYLE = "is not a valid minimap style.";
 
+-- Configuration warnings
+RMM_CONF_RESET = "New ReMinimap configuration created.";
+RMM_CONF_UPDATED = "ReMinimap version changed, you may want check configuration.";
+
 -- Options texts
 RMM_OPTIONS = "ReMinimap Options";
 RMM_OPT_STYLE = "Minimap style";
@@ -37,4 +41,10 @@ RMM_OPT_TIME = "Show time of day icon";
 RMM_OPT_ZONE = "Show location bar";
 RMM_OPT_WMAP = "Show worldmap icon";
 RMM_OPT_PIN = "Pin minimap position";
-RMM_OPT_ALPHA = "Alpha (opaque) of the minimap";
+RMM_OPT_ALPHA = "Alpha of the minimap";
+RMM_OPT_ALPHA2 = "opacity";
+
+-- Style texts
+RMM_STYLE_TEXT_DLX = "dLx";
+RMM_STYLE_TEXT_DEFAULT = "Default";
+RMM_STYLE_TEXT_SQUARE = "Square";

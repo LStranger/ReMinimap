@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
-  Author:	phresno
-  Version:	1.3.0
+  Authors:	phresno, lstranger
+  Version:	1.3.1
   Revision:	0
   Created:	2006.06.27
-  Updated:	2012.03.31
+  Updated:	2012.04.01
 
   See ChangeLog.txt for changes.
 
@@ -22,6 +22,7 @@ RMM_S_BATTLE    = 07;
 RMM_S_MEET      = 08;
 RMM_S_WMAP      = 09;
 
+--[[
 RMM_ENABLE      = 01; -- indexes
 RMM_CFG_VER     = 02;
 RMM_STYLE       = 03;
@@ -34,6 +35,19 @@ RMM_ALPHA       = 10;
 RMM_MAP_X       = 11;
 RMM_MAP_Y       = 12;
 RMM_SHOWWMAP    = 13;
+]]
+RMM_ENABLE      = "enabled";
+RMM_CFG_VER     = "version";
+RMM_STYLE       = "style";
+RMM_SHOWTIME    = "day time";
+RMM_SHOWZOOM    = "zoom button";
+RMM_SHOWZONE    = "zone";
+RMM_ZOOMWHEEL   = "zoom wheel";
+RMM_MOVABLE     = "movable";
+RMM_ALPHA       = "opaque";
+RMM_MAP_X       = "x";
+RMM_MAP_Y       = "y";
+RMM_SHOWWMAP    = "world map";
 
 RMM_ON          = "ON";
 RMM_OFF         = "OFF";
@@ -41,7 +55,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.0";
+RMM_VERSION     = "1.3.1";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
@@ -90,22 +104,22 @@ function RMMA_OptionsFrameStyleInitialize()
     info.func = RMMA_OptionsFrameStyle_OnClick;
     info.owner = RMMA_OptionsFrameStyle;
     table.foreach(RMM_STYLES, function(i, v)
-	info.text = i;
+	info.text = v["text"];
 	info.value = i;
-	--if (rmm_cfg[RMM_STYLE] == i) then
+	if (rmm_cfg[RMM_STYLE] == i) then
+	    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, info.text);
 	--    info.checked = 1;
 	--else
 	--    info.checked = nil;
-	--end
+	end
 	UIDropDownMenu_AddButton(info, 1);
     end );
-    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
     UIDropDownMenu_SetSelectedValue(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
 end
 
 function RMMA_OptionsFrameStyle_OnClick(self, button, down)
     rmm_cfg[RMM_STYLE] = self.value;
-    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
+    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, RMM_STYLES[self.value]["text"]);
     Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
 end
 
@@ -133,23 +147,9 @@ do
     --UIDropDownMenu_SetWidth(RMMA_OptionsFrameStyle, 200);
     --UIDropDownMenu_Initialize(RMMA_OptionsFrameStyle, RMMA_OptionsFrameStyleInitialize);
 
-    -- Toggle zoom buttons
-    RMMA_OptionsFrameZoom = CreateFrame("CheckButton", "RMMA_OptionsFrameZoom", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
-    RMMA_OptionsFrameZoom:SetPoint("TOPLEFT", RMMA_OptionsFrameStyleTitle, "BOTTOMLEFT", 0, -10);
-    RMMA_OptionsFrameZoomText:SetText(RMM_OPT_ZOOM);
-    RMMA_OptionsFrameZoom:SetScript("OnClick",
-	function()
-	    if (RMMA_OptionsFrameZoom:GetChecked()) then
-		rmm_cfg[RMM_SHOWZOOM] = true;
-	    else
-		rmm_cfg[RMM_SHOWZOOM] = false;
-	    end
-	    Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
-	end);
-
-    -- Toggle zoom control
+    -- Toggle zoom wheel control
     RMMA_OptionsFrameWheel = CreateFrame("CheckButton", "RMMA_OptionsFrameWheel", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
-    RMMA_OptionsFrameWheel:SetPoint("TOPLEFT", RMMA_OptionsFrameZoom, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameWheel:SetPoint("TOPLEFT", RMMA_OptionsFrameStyleTitle, "BOTTOMLEFT", 0, -10);
     RMMA_OptionsFrameWheelText:SetText(RMM_OPT_WHEEL);
     RMMA_OptionsFrameWheel:SetScript("OnClick",
 	function()
@@ -161,9 +161,23 @@ do
 	    -- wheel switch will be handled in handler
 	end);
 
+    -- Toggle zoom buttons
+    RMMA_OptionsFrameZoom = CreateFrame("CheckButton", "RMMA_OptionsFrameZoom", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFrameZoom:SetPoint("TOPLEFT", RMMA_OptionsFrameWheel, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameZoomText:SetText(RMM_OPT_ZOOM);
+    RMMA_OptionsFrameZoom:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFrameZoom:GetChecked()) then
+		rmm_cfg[RMM_SHOWZOOM] = true;
+	    else
+		rmm_cfg[RMM_SHOWZOOM] = false;
+	    end
+	    Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
+	end);
+
     -- Toggle day/night indicator
     RMMA_OptionsFrameTime = CreateFrame("CheckButton", "RMMA_OptionsFrameTime", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
-    RMMA_OptionsFrameTime:SetPoint("TOPLEFT", RMMA_OptionsFrameWheel, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFrameTime:SetPoint("TOPLEFT", RMMA_OptionsFrameZoom, "BOTTOMLEFT", 0, -6);
     RMMA_OptionsFrameTimeText:SetText(RMM_OPT_TIME);
     RMMA_OptionsFrameTime:SetScript("OnClick",
 	function()
@@ -231,6 +245,7 @@ do
 	function()
 	     rmm_cfg[RMM_ALPHA] = RMMA_OptionsFrameAlpha:GetValue();
 	     Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
+	     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
 	end );
 end
 
@@ -416,16 +431,30 @@ end
 -- configuration (re)initialization
 function Rmm_Cfg_Init()
    rmm_cfg = rmm_default_cfg;
+   Rmm_Print(RMM_CONF_RESET);
+end
+
+function Rmm_Cfg_Renit()
+   local old_cfg = rmm_cfg;
+   rmm_cfg = rmm_default_cfg;
+   for k, v in pairs(rmm_cfg) do
+      if (old_cfg[k] ~= nil) then
+         rmm_cfg[k] = old_cfg[k];
+      end
+   end
+   rmm_cfg[RMM_CFG_VER] = RMM_VERSION;
+   Rmm_Print(RMM_CONF_UPDATED);
 end
 
 function Rmm_Init()
    -- if vars not loaded, or there's a version mismatch - defaults
    if (nil == rmm_cfg
        or nil == rmm_cfg[RMM_CFG_VER]
-       or RMM_VERSION ~= rmm_cfg[RMM_CFG_VER]
       )
-  then
+   then
       Rmm_Cfg_Init();
+   elseif (RMM_VERSION ~= rmm_cfg[RMM_CFG_VER]) then
+      Rmm_Cfg_Renit();
    end
    UIDropDownMenu_Initialize(RMMA_OptionsFrameStyle, RMMA_OptionsFrameStyleInitialize);
 end
