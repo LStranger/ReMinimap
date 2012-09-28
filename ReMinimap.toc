@@ -1,5 +1,5 @@
-## Interface: 40300
-## Title: R|cffcc0000e|rMinimap v1.3.1
+## Interface: 50001
+## Title: R|cffcc0000e|rMinimap v1.3.2
 ## Authors: phresno, lstranger
 ## Notes: Allows customization of the minimap
 ## SavedVariables: rmm_cfg
