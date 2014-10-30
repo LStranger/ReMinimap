@@ -1,6 +1,6 @@
-## Interface: 50400
+## Interface: 60000
 ## X-Min-Interface: 50000
-## Title: R|cffcc0000e|rMinimap v1.3.4
+## Title: R|cffcc0000e|rMinimap v1.3.5
 ## Authors: phresno, lstranger
 ## Notes: Allows customization of the minimap
 ## SavedVariables: rmm_cfg
