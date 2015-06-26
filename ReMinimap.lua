@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.3.5
+  Version:	1.3.6
   Revision:	0
   Created:	2006.06.27
-  Updated:	2012.09.28
+  Updated:	2015.06.26
 
   See ChangeLog.txt for changes.
 
@@ -55,7 +55,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.5";
+RMM_VERSION     = "1.3.6";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
@@ -74,6 +74,7 @@ RMM_FRAMES = {
    MiniMapTrackingFrame,
    MinimapZoomIn,
    MinimapZoomOut,
+   ObjectiveTrackerFrame,
 };
 
 -- configuration settings (user changeable) --
