@@ -72,9 +72,11 @@ RMM_FRAMES = {
    MiniMapMailFrame,
    GameTimeFrame,
    MiniMapTrackingFrame,
+   MiniMapWorldMapButton,
    MinimapZoomIn,
    MinimapZoomOut,
    ObjectiveTrackerFrame,
+   MiniMapRecordingButton,
 };
 
 -- configuration settings (user changeable) --
