@@ -1,3 +1,12 @@
+2015.07.04 - 1.3.7
+- Fixed update of minimap position on /rmm [on/off], it was kept at place.
+- Added few missing minimap elements to the list to enable moving.
+- Added hack to unbind objectives frame from minimap to not move it with the
+  minimap. It is not movable separately though. Vehicle sits and durability
+  frames still are bound to the minimap, the game itself binds them each time
+  they appear, and to override that requires too much bigger work than such
+  simple addon can do.
+
 2015.06.26 - 1.3.6
 - TOC update (6.2.0)
 

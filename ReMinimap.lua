@@ -1,7 +1,7 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.3.6
+  Version:	1.3.7
   Revision:	0
   Created:	2006.06.27
   Updated:	2015.06.26
@@ -55,7 +55,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.6";
+RMM_VERSION     = "1.3.7";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
@@ -77,6 +77,16 @@ RMM_FRAMES = {
    MinimapZoomOut,
    ObjectiveTrackerFrame,
    MiniMapRecordingButton,
+};
+
+
+RMM_SUBFRAMES = { -- WoW defaults
+--   ["WatchFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=0, y=10 },
+   ["ObjectiveTrackerFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=0, y=10 },
+   ["DurabilityFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=40, y=15 },
+--   ["QuestTimerFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=10, y=0 },
+--   ["CaptureMover"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=10, y=15 },
+   ["VehicleSeatIndicator"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=40, y=15 },
 };
 
 -- configuration settings (user changeable) --
@@ -250,6 +260,8 @@ do
 	     Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
 	     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
 	end );
+
+    -- TODO: Add RESET button
 end
 
 --------------------------------------------------------------------------------
@@ -267,8 +279,8 @@ function Rmm_OnLoad(self)
    -- register for movement
    for k,v in pairs(RMM_FRAMES) do
       v:RegisterForDrag("LeftButton");
-      v:SetScript("OnDragStart", Rmm_OnDragStart);
-      v:SetScript("OnDragStop", Rmm_OnDragStop);
+      v:SetScript("OnDragStart", function(this) Rmm_OnDragStart(this) end);
+      v:SetScript("OnDragStop", function(this) Rmm_OnDragStop(this) end);
    end
 
    -- print version string
@@ -280,6 +292,7 @@ function Rmm_OnEvent(self, event, arg1)
       Rmm_Init();
       Rmm_Update();
       Rmm_SetMapPos(rmm_cfg[RMM_MAP_X], rmm_cfg[RMM_MAP_Y]); -- restor map position
+      Rmm_SetFramesPos();
 
       -- frames always (re)start locked
       rmm_cfg[RMM_MOVABLE] = false;
@@ -361,6 +374,7 @@ end
 function Rmm_Cmd_Movable(_set)
    if (RMM_RESET == _set) then
       Rmm_SetMapPos();
+      Rmm_SetFramesPos(true);
       Rmm_CfgSet(RMM_MAP_X, false);
       Rmm_CfgSet(RMM_MAP_Y, false);
    else
@@ -409,6 +423,7 @@ end
 function Rmm_Cmd_Defaults(_set)
    Rmm_Cfg_Init();
    Rmm_SetMapPos();
+   Rmm_SetFramesPos(true);
    Rmm_Update();
 end
 
@@ -472,6 +487,7 @@ function Rmm_Update()
       Rmm_SetWMap(true);
       Rmm_SetAlpha(1);
       Rmm_SetMapPos();
+      Rmm_SetFramesPos(true);
    else
       Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
       Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
@@ -479,6 +495,7 @@ function Rmm_Update()
       Rmm_SetZone(rmm_cfg[RMM_SHOWZONE]);
       Rmm_SetWMap(rmm_cfg[RMM_SHOWWMAP]);
       Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
+      Rmm_SetMapPos(rmm_cfg[RMM_MAP_X], rmm_cfg[RMM_MAP_Y]); -- map position
       Rmm_SetFramesPos();
       MiniMapTracking:SetFrameStrata("LOW"); -- fix tracking icon
 
@@ -562,24 +579,35 @@ end
 -- On<Event> functions
 --------------------------------------------------------------------------------
 
-function Rmm_OnDragStart()
+function Rmm_OnDragStart(self, target)
+   local v = MinimapCluster;
+   if (target ~= nil) then
+      v = getglobal(target);
+   end
    if (rmm_cfg[RMM_MOVABLE]) then
-      MinimapCluster.moving = true;
-      MinimapCluster:StartMoving();
+      Rmm_SetFramesPos();
+      v.moving = true;
+      v:StartMoving();
    else
       return;
    end
 end
 
-function Rmm_OnDragStop()
-   MinimapCluster.moving  = false;
+function Rmm_OnDragStop(self, target)
+   local v = MinimapCluster;
+   if (target ~= nil) then
+      v = getglobal(target);
+   end
+   v.moving  = false;
 
-   MinimapCluster:StopMovingOrSizing();
+   v:StopMovingOrSizing();
 
-   x, y = MinimapCluster:GetCenter();
+   if (v == MinimapCluster) then
+      x, y = v:GetCenter();
 
-   Rmm_CfgSet(RMM_MAP_X, x);
-   Rmm_CfgSet(RMM_MAP_Y, y);
+      Rmm_CfgSet(RMM_MAP_X, x);
+      Rmm_CfgSet(RMM_MAP_Y, y);
+   end
 end
 
 function Rmm_Map_OnMouseWheel(self, _arg)
@@ -649,5 +677,15 @@ end
 function Rmm_FramesMovable(_state)
    for _, frame in pairs(RMM_FRAMES) do
       frame:SetMovable(_state);
+   end
+end
+
+function Rmm_SetFramesPos(_r)
+   local subs = rmm_cfg[RMM_MAP_SUB];
+   for k,t in pairs(RMM_SUBFRAMES) do
+      local frame = getglobal(k);
+      frame:ClearAllPoints();
+      frame:SetMovable(rmm_cfg[RMM_ENABLE]);
+      frame:SetUserPlaced(rmm_cfg[RMM_ENABLE]);
    end
 end
