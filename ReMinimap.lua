@@ -469,6 +469,7 @@ function Rmm_Update()
       Rmm_SetZone(true);
       Rmm_SetWMap(true);
       Rmm_SetAlpha(1);
+      Rmm_SetMapPos();
    else
       Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
       Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
@@ -476,6 +477,7 @@ function Rmm_Update()
       Rmm_SetZone(rmm_cfg[RMM_SHOWZONE]);
       Rmm_SetWMap(rmm_cfg[RMM_SHOWWMAP]);
       Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
+      Rmm_SetFramesPos();
       MiniMapTracking:SetFrameStrata("LOW"); -- fix tracking icon
 
       -- set options now
