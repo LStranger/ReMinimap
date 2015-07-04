@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.3.7
+  Version:	1.3.8
   Revision:	0
   Created:	2006.06.27
-  Updated:	2015.06.26
+  Updated:	2015.07.04
 
   See ChangeLog.txt for changes.
 
@@ -48,6 +48,7 @@ RMM_ALPHA       = "opaque";
 RMM_MAP_X       = "x";
 RMM_MAP_Y       = "y";
 RMM_SHOWWMAP    = "world map";
+RMM_PIN_FRAMES  = "pin subframes";
 
 RMM_ON          = "ON";
 RMM_OFF         = "OFF";
@@ -55,7 +56,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.7";
+RMM_VERSION     = "1.3.8";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
@@ -103,6 +104,7 @@ rmm_default_cfg = {
    [RMM_ALPHA]      = 1, -- 100% opaque
    [RMM_MAP_X]      = false,
    [RMM_MAP_Y]      = false,
+   [RMM_PIN_FRAMES] = false,
 };
 
 rmm_cfg = {};
@@ -244,11 +246,25 @@ do
 	    Rmm_FramesMovable(rmm_cfg[RMM_MOVABLE]);
 	end);
 
+    -- Toggle quest tracker binding to minimap
+    RMMA_OptionsFramePinFrames = CreateFrame("CheckButton", "RMMA_OptionsFramePinFrames", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
+    RMMA_OptionsFramePinFrames:SetPoint("TOPLEFT", RMMA_OptionsFramePin, "BOTTOMLEFT", 0, -6);
+    RMMA_OptionsFramePinFramesText:SetText(RMM_OPT_FRAMES);
+    RMMA_OptionsFramePinFrames:SetScript("OnClick",
+	function()
+	    if (RMMA_OptionsFramePinFrames:GetChecked()) then
+		rmm_cfg[RMM_PIN_FRAMES] = true;
+	    else
+		rmm_cfg[RMM_PIN_FRAMES] = false;
+	    end
+	    Rmm_SetFramesPos();
+	end);
+
     -- Change transparency
     RMMA_OptionsFrameAlpha = CreateFrame("Slider", "RMMA_OptionsFrameAlpha", RMMA_OptionsFrame, "OptionsSliderTemplate");
     RMMA_OptionsFrameAlpha:SetWidth(300);
     RMMA_OptionsFrameAlpha:SetHeight(16);
-    RMMA_OptionsFrameAlpha:SetPoint("TOPLEFT", RMMA_OptionsFramePin, "BOTTOMLEFT", 0, -20);
+    RMMA_OptionsFrameAlpha:SetPoint("TOPLEFT", RMMA_OptionsFramePinFrames, "BOTTOMLEFT", 0, -20);
     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA);
     RMMA_OptionsFrameAlphaHigh:SetText("100%");
     RMMA_OptionsFrameAlphaLow:SetText("0%");
@@ -295,7 +311,7 @@ function Rmm_OnEvent(self, event, arg1)
       Rmm_SetFramesPos();
 
       -- frames always (re)start locked
-      rmm_cfg[RMM_MOVABLE] = false;
+--      rmm_cfg[RMM_MOVABLE] = false;
    end
 end
 
@@ -506,6 +522,7 @@ function Rmm_Update()
       RMMA_OptionsFrameZone:SetChecked(rmm_cfg[RMM_SHOWZONE]);
       RMMA_OptionsFrameWMap:SetChecked(rmm_cfg[RMM_SHOWWMAP]);
       RMMA_OptionsFramePin:SetChecked(not rmm_cfg[RMM_MOVABLE]);
+      RMMA_OptionsFramePinFrames:SetChecked(rmm_cfg[RMM_PIN_FRAMES]);
       RMMA_OptionsFrameAlpha:SetValue(rmm_cfg[RMM_ALPHA]);
    end
 
@@ -680,12 +697,15 @@ function Rmm_FramesMovable(_state)
    end
 end
 
+-- this is dirty but inevitable
 function Rmm_SetFramesPos(_r)
    local subs = rmm_cfg[RMM_MAP_SUB];
    for k,t in pairs(RMM_SUBFRAMES) do
       local frame = getglobal(k);
-      frame:ClearAllPoints();
-      frame:SetMovable(rmm_cfg[RMM_ENABLE]);
-      frame:SetUserPlaced(rmm_cfg[RMM_ENABLE]);
+      frame:SetMovable(rmm_cfg[RMM_ENABLE] and rmm_cfg[RMM_PIN_FRAMES]);
+      if (rmm_cfg[RMM_ENABLE] and rmm_cfg[RMM_PIN_FRAMES]) then
+         frame:ClearAllPoints();
+         frame:SetUserPlaced(true);
+      end
    end
 end

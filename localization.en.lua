@@ -3,7 +3,7 @@
   Translator: phresno
   Language:   English (US)
   Created:	  2006.06.27
-  Updated:	  2012.03.31
+  Updated:	  2015.07.04
 ------------------------------------------------------------------------------]]
 
 -- Usage help
@@ -41,6 +41,7 @@ RMM_OPT_TIME = "Show time of day icon";
 RMM_OPT_ZONE = "Show location bar";
 RMM_OPT_WMAP = "Show worldmap icon";
 RMM_OPT_PIN = "Pin minimap position";
+RMM_OPT_FRAMES = "Unlink quest tracker from minimap";
 RMM_OPT_ALPHA = "Alpha of the minimap";
 RMM_OPT_ALPHA2 = "opacity";
 
