@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.3.8
+  Version:	1.3.9
   Revision:	0
   Created:	2006.06.27
-  Updated:	2015.07.04
+  Updated:	2016.07.20
 
   See ChangeLog.txt for changes.
 
@@ -56,7 +56,7 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.8";
+RMM_VERSION     = "1.3.9";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
