@@ -1,3 +1,10 @@
+2021.11.07 - 1.4.0
+- Fixed frames mobility: rewritten to match current UI.
+- Fixed wrong shape on round minimap.
+- Dropped obsolete option "unbind objectives frame".
+- Added a button to reset options into Addon Options frame.
+- TOC update (9.1.5)
+
 2016.07.20 - 1.3.9
 - TOC update (7.0.3)
 

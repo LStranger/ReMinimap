@@ -3,14 +3,14 @@
   Author:	phresno
   Revision:	1
   Created:	2006.06.27
-  Updated:	2012.04.01
+  Updated:	2021.10.04
 ------------------------------------------------------------------------------]]
 
 -- minimap styles
 RMM_STYLES = {};
 RMM_STYLES["DEFAULT"] = {
    [RMM_S_BORDER] = "Interface\\Minimap\\UI-Minimap-Border",
-   [RMM_S_MASK]   = "textures\\MinimapMask",
+   [RMM_S_MASK]   = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
    ["text"]       = RMM_STYLE_TEXT_DEFAULT,
 };
 RMM_STYLES["DLX"] = {

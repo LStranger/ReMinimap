@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.3.9
+  Version:	1.4.0
   Revision:	0
   Created:	2006.06.27
-  Updated:	2016.07.20
+  Updated:	2021.11.07
 
   See ChangeLog.txt for changes.
 
@@ -22,20 +22,6 @@ RMM_S_BATTLE    = 07;
 RMM_S_MEET      = 08;
 RMM_S_WMAP      = 09;
 
---[[
-RMM_ENABLE      = 01; -- indexes
-RMM_CFG_VER     = 02;
-RMM_STYLE       = 03;
-RMM_SHOWTIME    = 04;
-RMM_SHOWZOOM    = 05;
-RMM_SHOWZONE    = 06;
-RMM_ZOOMWHEEL   = 07;
-RMM_MOVABLE     = 08;
-RMM_ALPHA       = 10;
-RMM_MAP_X       = 11;
-RMM_MAP_Y       = 12;
-RMM_SHOWWMAP    = 13;
-]]
 RMM_ENABLE      = "enabled";
 RMM_CFG_VER     = "version";
 RMM_STYLE       = "style";
@@ -45,10 +31,8 @@ RMM_SHOWZONE    = "zone";
 RMM_ZOOMWHEEL   = "zoom wheel";
 RMM_MOVABLE     = "movable";
 RMM_ALPHA       = "opaque";
-RMM_MAP_X       = "x";
-RMM_MAP_Y       = "y";
 RMM_SHOWWMAP    = "world map";
-RMM_PIN_FRAMES  = "pin subframes";
+RMM_POINT       = "point";
 
 RMM_ON          = "ON";
 RMM_OFF         = "OFF";
@@ -56,38 +40,20 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.3.9";
+RMM_VERSION     = "1.4.0";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
-RMM_DEF_X       = 1108.7059618725
-RMM_DEF_Y       = 807.52936113582
-
-RMM_FRAMES = {
-   Minimap,
-   MinimapCluster,
-   MinimapBackdrop,
-   MinimapZoneTextButton,
-   MiniMapBattlefieldFrame,
-   MiniMapMeetingStoneFrame,
-   MiniMapMailFrame,
-   GameTimeFrame,
-   MiniMapTrackingFrame,
-   MiniMapWorldMapButton,
-   MinimapZoomIn,
-   MinimapZoomOut,
-   ObjectiveTrackerFrame,
-   MiniMapRecordingButton,
-};
 
 
-RMM_SUBFRAMES = { -- WoW defaults
---   ["WatchFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=0, y=10 },
-   ["ObjectiveTrackerFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=0, y=10 },
-   ["DurabilityFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=40, y=15 },
---   ["QuestTimerFrame"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=10, y=0 },
---   ["CaptureMover"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=10, y=15 },
-   ["VehicleSeatIndicator"] = { anchor=MinimapCluster, point="TOPRIGHT", rpoint="BOTTOMRIGHT", x=40, y=15 },
+-- List of elements that need to be re-attached to Minimap from MinimapCluster
+RMM_REMAP_LIST = {
+   ["MinimapBackdrop"] = { "TOP", "TOP", -9, -2 },
+   ["MinimapBorderTop"] = { "TOP", "TOP", -9, 22 },
+   ["MinimapZoneTextButton"] = { "BOTTOM", "TOP", -9, 3 },
+   ["MiniMapInstanceDifficulty"] = { "TOPLEFT", "TOPLEFT", -13, 5 },
+   ["GuildInstanceDifficulty"] = { "TOPLEFT", "TOPLEFT", -13, 5 },
+   ["MiniMapChallengeMode"] = { "TOPLEFT", "TOPLEFT", -7, -1 },
 };
 
 -- configuration settings (user changeable) --
@@ -102,13 +68,12 @@ rmm_default_cfg = {
    [RMM_SHOWWMAP]   = true, -- show worldmap icon
    [RMM_MOVABLE]    = false,
    [RMM_ALPHA]      = 1, -- 100% opaque
-   [RMM_MAP_X]      = false,
-   [RMM_MAP_Y]      = false,
-   [RMM_PIN_FRAMES] = false,
+   [RMM_POINT]      = nil,
 };
 
 rmm_cfg = {};
 
+RmmSavedPoint = nil;
 
 --------------------------------------------------------------------------------
 -- Options Frame
@@ -121,12 +86,6 @@ function RMMA_OptionsFrameStyleInitialize()
     table.foreach(RMM_STYLES, function(i, v)
 	info.text = v["text"];
 	info.value = i;
-	if (rmm_cfg[RMM_STYLE] == i) then
-	    UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, info.text);
-	--    info.checked = 1;
-	--else
-	--    info.checked = nil;
-	end
 	UIDropDownMenu_AddButton(info, 1);
     end );
     UIDropDownMenu_SetSelectedValue(RMMA_OptionsFrameStyle, rmm_cfg[RMM_STYLE]);
@@ -247,24 +206,12 @@ do
 	end);
 
     -- Toggle quest tracker binding to minimap
-    RMMA_OptionsFramePinFrames = CreateFrame("CheckButton", "RMMA_OptionsFramePinFrames", RMMA_OptionsFrame, "ChatConfigCheckButtonTemplate");
-    RMMA_OptionsFramePinFrames:SetPoint("TOPLEFT", RMMA_OptionsFramePin, "BOTTOMLEFT", 0, -6);
-    RMMA_OptionsFramePinFramesText:SetText(RMM_OPT_FRAMES);
-    RMMA_OptionsFramePinFrames:SetScript("OnClick",
-	function()
-	    if (RMMA_OptionsFramePinFrames:GetChecked()) then
-		rmm_cfg[RMM_PIN_FRAMES] = true;
-	    else
-		rmm_cfg[RMM_PIN_FRAMES] = false;
-	    end
-	    Rmm_SetFramesPos();
-	end);
 
     -- Change transparency
     RMMA_OptionsFrameAlpha = CreateFrame("Slider", "RMMA_OptionsFrameAlpha", RMMA_OptionsFrame, "OptionsSliderTemplate");
     RMMA_OptionsFrameAlpha:SetWidth(300);
     RMMA_OptionsFrameAlpha:SetHeight(16);
-    RMMA_OptionsFrameAlpha:SetPoint("TOPLEFT", RMMA_OptionsFramePinFrames, "BOTTOMLEFT", 0, -20);
+    RMMA_OptionsFrameAlpha:SetPoint("TOPLEFT", RMMA_OptionsFramePin, "BOTTOMLEFT", 0, -20);
     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA);
     RMMA_OptionsFrameAlphaHigh:SetText("100%");
     RMMA_OptionsFrameAlphaLow:SetText("0%");
@@ -277,7 +224,15 @@ do
 	     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
 	end );
 
-    -- TODO: Add RESET button
+    -- A RESET button
+    RMMA_OptionsFrameReset = CreateFrame("Button", "RMMA_OptionsFrameReset", RMMA_OptionsFrame, "UIPanelButtonTemplate");
+    RMMA_OptionsFrameReset:SetSize(420, 22);
+    RMMA_OptionsFrameReset:SetPoint("TOPLEFT", RMMA_OptionsFrameAlpha, "BOTTOMLEFT", 0, -32);
+    RMMA_OptionsFrameReset:SetText(RMM_OPT_RESET);
+    RMMA_OptionsFrameReset:SetScript("OnClick",
+	function()
+	   Rmm_Cmd_Defaults(true);
+	end );
 end
 
 --------------------------------------------------------------------------------
@@ -293,10 +248,20 @@ function Rmm_OnLoad(self)
    SLASH_REMINIMAP1 = "/rmm";
 
    -- register for movement
-   for k,v in pairs(RMM_FRAMES) do
-      v:RegisterForDrag("LeftButton");
-      v:SetScript("OnDragStart", function(this) Rmm_OnDragStart(this) end);
-      v:SetScript("OnDragStop", function(this) Rmm_OnDragStop(this) end);
+   Minimap:RegisterForDrag("LeftButton");
+   Minimap:SetScript("OnDragStart", function(this) Rmm_OnDragStart(this) end);
+   Minimap:SetScript("OnDragStop", function(this) Rmm_OnDragStop(this) end);
+   Minimap:ClearAllPoints();
+   Minimap:SetParent(UIParent);
+   MinimapBackdrop:ClearAllPoints();
+   MinimapBackdrop:SetPoint("TOP", Minimap, "TOP", 0, 0);
+   for k,v in pairs(RMM_REMAP_LIST) do
+      local frame = getglobal(k);
+      if (frame ~= nil) then
+         frame:ClearAllPoints();
+         frame:SetParent(Minimap);
+         frame:SetPoint(v[1], Minimap, v[2], v[3], v[4]);
+      end
    end
 
    -- print version string
@@ -307,8 +272,6 @@ function Rmm_OnEvent(self, event, arg1)
    if (event == "PLAYER_ENTERING_WORLD") then
       Rmm_Init();
       Rmm_Update();
-      Rmm_SetMapPos(rmm_cfg[RMM_MAP_X], rmm_cfg[RMM_MAP_Y]); -- restor map position
-      Rmm_SetFramesPos();
 
       -- frames always (re)start locked
 --      rmm_cfg[RMM_MOVABLE] = false;
@@ -390,9 +353,7 @@ end
 function Rmm_Cmd_Movable(_set)
    if (RMM_RESET == _set) then
       Rmm_SetMapPos();
-      Rmm_SetFramesPos(true);
-      Rmm_CfgSet(RMM_MAP_X, false);
-      Rmm_CfgSet(RMM_MAP_Y, false);
+      Rmm_CfgSet(RMM_POINT, nil);
    else
       if (RMM_ON == _set) then
          Rmm_FramesMovable(true);
@@ -439,7 +400,6 @@ end
 function Rmm_Cmd_Defaults(_set)
    Rmm_Cfg_Init();
    Rmm_SetMapPos();
-   Rmm_SetFramesPos(true);
    Rmm_Update();
 end
 
@@ -481,6 +441,13 @@ function Rmm_Cfg_Renit()
 end
 
 function Rmm_Init()
+   -- save original minimap cluster as a reference
+   if (RmmSavedPoint == nil) then
+      local point, _, _, xOfs, yOfs = MinimapCluster:GetPoint(1);
+      if (point == "TOPRIGHT") then
+         RmmSavedPoint = { xOfs, yOfs };
+      end
+   end
    -- if vars not loaded, or there's a version mismatch - defaults
    if (nil == rmm_cfg
        or nil == rmm_cfg[RMM_CFG_VER]
@@ -503,7 +470,7 @@ function Rmm_Update()
       Rmm_SetWMap(true);
       Rmm_SetAlpha(1);
       Rmm_SetMapPos();
-      Rmm_SetFramesPos(true);
+      Rmm_FramesMovable(false);
    else
       Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
       Rmm_SetZoomButton(rmm_cfg[RMM_SHOWZOOM]);
@@ -511,18 +478,21 @@ function Rmm_Update()
       Rmm_SetZone(rmm_cfg[RMM_SHOWZONE]);
       Rmm_SetWMap(rmm_cfg[RMM_SHOWWMAP]);
       Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
-      Rmm_SetMapPos(rmm_cfg[RMM_MAP_X], rmm_cfg[RMM_MAP_Y]); -- map position
-      Rmm_SetFramesPos();
+      Rmm_SetMapPos(rmm_cfg[RMM_POINT]); -- map position
+      Rmm_FramesMovable(rmm_cfg[RMM_MOVABLE]);
       MiniMapTracking:SetFrameStrata("LOW"); -- fix tracking icon
 
       -- set options now
+      local info = RMM_STYLES[rmm_cfg[RMM_STYLE]];
+      if info then
+         UIDropDownMenu_SetText(RMMA_OptionsFrameStyle, info["text"]);
+      end
       RMMA_OptionsFrameZoom:SetChecked(rmm_cfg[RMM_SHOWZOOM]);
       RMMA_OptionsFrameWheel:SetChecked(rmm_cfg[RMM_ZOOMWHEEL]);
       RMMA_OptionsFrameTime:SetChecked(rmm_cfg[RMM_SHOWTIME]);
       RMMA_OptionsFrameZone:SetChecked(rmm_cfg[RMM_SHOWZONE]);
       RMMA_OptionsFrameWMap:SetChecked(rmm_cfg[RMM_SHOWWMAP]);
       RMMA_OptionsFramePin:SetChecked(not rmm_cfg[RMM_MOVABLE]);
-      RMMA_OptionsFramePinFrames:SetChecked(rmm_cfg[RMM_PIN_FRAMES]);
       RMMA_OptionsFrameAlpha:SetValue(rmm_cfg[RMM_ALPHA]);
    end
 
@@ -579,16 +549,18 @@ end
 
 function Rmm_SetAlpha(_val)
    Rmm_CfgSet(RMM_ALPHA, _val);
-   MinimapCluster:SetAlpha(_val);
+   Minimap:SetAlpha(_val);
 end
 
-function Rmm_SetMapPos(_x, _y)
-   MinimapCluster:ClearAllPoints();
+function Rmm_SetMapPos(point)
+   Minimap:ClearAllPoints();
 
-   if (_x and _y) then
-      MinimapCluster:SetPoint("CENTER", UIParent, "BOTTOMLEFT", _x, _y);
+   if (type(point) == "table" and #point == 4) then
+      Minimap:SetPoint(point[1], UIParent, point[2], point[3], point[4]);
    else
-      MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT");
+      local cpt = RmmSavedPoint or { 0, 0 };
+      -- Trying to use correct point if some panel shifted it
+      Minimap:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", cpt[1]-17, cpt[2]-22);
    end
 end
 
@@ -597,12 +569,13 @@ end
 --------------------------------------------------------------------------------
 
 function Rmm_OnDragStart(self, target)
-   local v = MinimapCluster;
-   if (target ~= nil) then
+   local v = Minimap;
+   if InCombatLockdown() then
+       return
+   elseif (target ~= nil) then
       v = getglobal(target);
    end
    if (rmm_cfg[RMM_MOVABLE]) then
-      Rmm_SetFramesPos();
       v.moving = true;
       v:StartMoving();
    else
@@ -611,24 +584,27 @@ function Rmm_OnDragStart(self, target)
 end
 
 function Rmm_OnDragStop(self, target)
-   local v = MinimapCluster;
-   if (target ~= nil) then
+   local v = Minimap;
+   if InCombatLockdown() then
+       return
+   elseif (target ~= nil) then
       v = getglobal(target);
    end
    v.moving  = false;
 
    v:StopMovingOrSizing();
 
-   if (v == MinimapCluster) then
-      x, y = v:GetCenter();
+   if (v == Minimap) then
+      local point, relativeTo, relativePoint, xOfs, yOfs = v:GetPoint(1);
 
-      Rmm_CfgSet(RMM_MAP_X, x);
-      Rmm_CfgSet(RMM_MAP_Y, y);
+      Rmm_CfgSet(RMM_POINT, { point, relativePoint, xOfs, yOfs });
    end
 end
 
 function Rmm_Map_OnMouseWheel(self, _arg)
-   if (IsControlKeyDown()) then
+   if InCombatLockdown() then
+       return;
+   elseif (IsControlKeyDown()) then
       Rmm_SetAlpha(Rmm_AlphaChange(rmm_cfg[RMM_ALPHA], _arg));
    elseif (rmm_cfg[RMM_ZOOMWHEEL]) then
       if (_arg > 0) then
@@ -692,20 +668,6 @@ function Rmm_AlphaChange(_cur, _chg)
 end
 
 function Rmm_FramesMovable(_state)
-   for _, frame in pairs(RMM_FRAMES) do
-      frame:SetMovable(_state);
-   end
+   Minimap:SetMovable(_state);
 end
 
--- this is dirty but inevitable
-function Rmm_SetFramesPos(_r)
-   local subs = rmm_cfg[RMM_MAP_SUB];
-   for k,t in pairs(RMM_SUBFRAMES) do
-      local frame = getglobal(k);
-      frame:SetMovable(rmm_cfg[RMM_ENABLE] and rmm_cfg[RMM_PIN_FRAMES]);
-      if (rmm_cfg[RMM_ENABLE] and rmm_cfg[RMM_PIN_FRAMES]) then
-         frame:ClearAllPoints();
-         frame:SetUserPlaced(true);
-      end
-   end
-end
