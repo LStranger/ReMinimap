@@ -1,6 +1,6 @@
 ## Interface: 90105
 ## X-Min-Interface: 90000
-## Title: R|cffcc0000e|rMinimap v1.4.0
+## Title: R|cffcc0000e|rMinimap v1.4.1
 ## Authors: phresno, lstranger
 ## Notes: Allows customization of the minimap
 ## SavedVariables: rmm_cfg

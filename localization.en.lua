@@ -43,7 +43,6 @@ RMM_OPT_WMAP = "Show worldmap icon";
 RMM_OPT_PIN = "Pin minimap position";
 RMM_OPT_ALPHA = "Alpha of the minimap";
 RMM_OPT_ALPHA2 = "opacity";
-RMM_OPT_RESET = "Reset minimap position and options to defaults";
 
 -- Style texts
 RMM_STYLE_TEXT_DLX = "dLx";

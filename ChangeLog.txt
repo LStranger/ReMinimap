@@ -1,3 +1,7 @@
+2021.11.08 - 1.4.1
+- Fixed game button 'Defaults' and dropped own button.
+- Fixed update options slider when Ctrl-Wheel applied.
+
 2021.11.07 - 1.4.0
 - Fixed frames mobility: rewritten to match current UI.
 - Fixed wrong shape on round minimap.

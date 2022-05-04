@@ -1,7 +1,7 @@
 --[[----------------------------------------------------------------------------
   ReMinimap.lua
   Authors:	phresno, lstranger
-  Version:	1.4.0
+  Version:	1.4.1
   Revision:	0
   Created:	2006.06.27
   Updated:	2021.11.07
@@ -9,6 +9,8 @@
   See ChangeLog.txt for changes.
 
   See Readme.txt for more information and additional credits.
+
+  TODO: add a "Reset to defaults" button.
 ------------------------------------------------------------------------------]]
 
 -- pseudo constants --
@@ -40,13 +42,12 @@ RMM_BUTTON      = "BUTTON";
 RMM_TOGGLE      = "TOGGLE"; -- state
 RMM_DEFAULT     = "DEFAULT"; -- style
 RMM_RESET       = "RESET";
-RMM_VERSION     = "1.4.0";
+RMM_VERSION     = "1.4.1";
 RMM_VERSION_STR = "R|cffcc0000e|rMinimap v"..RMM_VERSION;
 RMM_STYLE_PATH  = "Interface\\AddOns\\ReMinimap\\styles";
 RMM_ALPHA_RATE  = 0.05;
 
 
--- List of elements that need to be re-attached to Minimap from MinimapCluster
 RMM_REMAP_LIST = {
    ["MinimapBackdrop"] = { "TOP", "TOP", -9, -2 },
    ["MinimapBorderTop"] = { "TOP", "TOP", -9, 22 },
@@ -97,10 +98,9 @@ function RMMA_OptionsFrameStyle_OnClick(self, button, down)
     Rmm_SetStyle(rmm_cfg[RMM_STYLE]);
 end
 
-do
     RMMA_OptionsFrame = CreateFrame("FRAME", "RMMA_OptionsFrame", UIParent );
     RMMA_OptionsFrame.name = "ReMinimap";
-    RMMA_OptionsFrame.default = function () RMMA_SetGeneralDefaults(); end;
+    RMMA_OptionsFrame.default = function () Rmm_Cmd_Defaults(); end;
     InterfaceOptions_AddCategory(RMMA_OptionsFrame);
 
     -- Options title
@@ -223,17 +223,7 @@ do
 	     Rmm_SetAlpha(rmm_cfg[RMM_ALPHA]);
 	     RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
 	end );
-
-    -- A RESET button
-    RMMA_OptionsFrameReset = CreateFrame("Button", "RMMA_OptionsFrameReset", RMMA_OptionsFrame, "UIPanelButtonTemplate");
-    RMMA_OptionsFrameReset:SetSize(420, 22);
-    RMMA_OptionsFrameReset:SetPoint("TOPLEFT", RMMA_OptionsFrameAlpha, "BOTTOMLEFT", 0, -32);
-    RMMA_OptionsFrameReset:SetText(RMM_OPT_RESET);
-    RMMA_OptionsFrameReset:SetScript("OnClick",
-	function()
-	   Rmm_Cmd_Defaults(true);
-	end );
-end
+--end
 
 --------------------------------------------------------------------------------
 -- Main Program Control & Config Functions
@@ -248,6 +238,7 @@ function Rmm_OnLoad(self)
    SLASH_REMINIMAP1 = "/rmm";
 
    -- register for movement
+   Minimap:SetClampedToScreen(true)
    Minimap:RegisterForDrag("LeftButton");
    Minimap:SetScript("OnDragStart", function(this) Rmm_OnDragStart(this) end);
    Minimap:SetScript("OnDragStop", function(this) Rmm_OnDragStop(this) end);
@@ -424,16 +415,17 @@ end
 
 -- configuration (re)initialization
 function Rmm_Cfg_Init()
-   rmm_cfg = rmm_default_cfg;
+   rmm_cfg = {};
+   for k, v in pairs(rmm_default_cfg) do
+      rmm_cfg[k] = v;
+   end
    Rmm_Print(RMM_CONF_RESET);
 end
 
 function Rmm_Cfg_Renit()
-   local old_cfg = rmm_cfg;
-   rmm_cfg = rmm_default_cfg;
-   for k, v in pairs(rmm_cfg) do
-      if (old_cfg[k] ~= nil) then
-         rmm_cfg[k] = old_cfg[k];
+   for k, v in pairs(rmm_default_cfg) do
+      if (rmm_cfg[k] == nil) then
+         rmm_cfg[k] = v;
       end
    end
    rmm_cfg[RMM_CFG_VER] = RMM_VERSION;
@@ -494,6 +486,7 @@ function Rmm_Update()
       RMMA_OptionsFrameWMap:SetChecked(rmm_cfg[RMM_SHOWWMAP]);
       RMMA_OptionsFramePin:SetChecked(not rmm_cfg[RMM_MOVABLE]);
       RMMA_OptionsFrameAlpha:SetValue(rmm_cfg[RMM_ALPHA]);
+      RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
    end
 
    -- zoom wheel is handled in the event function itself
@@ -570,7 +563,7 @@ end
 
 function Rmm_OnDragStart(self, target)
    local v = Minimap;
-   if InCombatLockdown() then
+   if InCombatLockdown() == 1 then
        return
    elseif (target ~= nil) then
       v = getglobal(target);
@@ -585,7 +578,7 @@ end
 
 function Rmm_OnDragStop(self, target)
    local v = Minimap;
-   if InCombatLockdown() then
+   if InCombatLockdown() == 1 then
        return
    elseif (target ~= nil) then
       v = getglobal(target);
@@ -602,10 +595,12 @@ function Rmm_OnDragStop(self, target)
 end
 
 function Rmm_Map_OnMouseWheel(self, _arg)
-   if InCombatLockdown() then
+   if InCombatLockdown() == 1 then
        return;
    elseif (IsControlKeyDown()) then
       Rmm_SetAlpha(Rmm_AlphaChange(rmm_cfg[RMM_ALPHA], _arg));
+      RMMA_OptionsFrameAlpha:SetValue(rmm_cfg[RMM_ALPHA]);
+      RMMA_OptionsFrameAlphaText:SetText(RMM_OPT_ALPHA.." ("..RMM_OPT_ALPHA2..abs(ceil((rmm_cfg[RMM_ALPHA] * 100)-0.5)).."%)");
    elseif (rmm_cfg[RMM_ZOOMWHEEL]) then
       if (_arg > 0) then
          Minimap_ZoomIn();
